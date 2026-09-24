@@ -71,8 +71,8 @@ function scoreMatch(sourceTitle:string,candidateTitle:string,keywords:string[]){
   const kwHits=keywords.filter(k=>B.has(k)||cleanTitle(candidateTitle).includes(k)).length;
   score += Math.min(0.3, kwHits*0.075);
 
-  const numsA=sourceTitle.match(/\d+(?:[.,]\d+)?/g)||[];
-  const numsB=candidateTitle.match(/\d+(?:[.,]\d+)?/g)||[];
+  const numsA:string[]=sourceTitle.match(/\d+(?:[.,]\d+)?/g) ?? [];
+  const numsB:string[]=candidateTitle.match(/\d+(?:[.,]\d+)?/g) ?? [];
   if(numsA.some(n=>numsB.includes(n))) score+=0.12;
 
   const core=keywords.slice(0,3);
