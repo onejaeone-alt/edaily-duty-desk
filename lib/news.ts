@@ -61,12 +61,22 @@ function classify(title:string, fallback:Category='기타'):Category{
   return fallback;
 }
 function importance(title:string, publishedAt:string){
-  let s=45;
-  if(/^(속보|\[속보\])|비상|사망|구속|체포|기소|영장|전격|사퇴|해임|파면|탄핵|붕괴|폭발|화재|추락|충돌|전쟁|공격|피격|금리|기준금리|환율|급등|급락|서킷브레이커|거래정지/i.test(title)) s+=28;
-  if(/단독|최초|확정|결정|발표|합의|무산|중단|재개|인수|매각|공개매수|회생|파산|법정관리/i.test(title)) s+=14;
-  if(/포토|화보|영상|SNS|근황|패션|공항패션/i.test(title)) s-=18;
+  let s=38;
+
+  // '속보'라는 형식 자체에는 점수를 주지 않는다.
+  if(/기준금리|금리 인상|금리 인하|환율|서킷브레이커|거래정지|디폴트|채무불이행|파산|회생절차|법정관리|대규모 리콜|상장폐지|유상증자|감자/i.test(title)) s+=24;
+  if(/인수|매각|합병|M&A|공개매수|IPO|상장|대규모 투자|지분 매각|경영권|최대주주|실적 쇼크|어닝 서프라이즈/i.test(title)) s+=20;
+  if(/법원|대법원|헌재|구속|기소|영장|압수수색|수사 착수|유죄|무죄|파면|탄핵|사퇴|해임/i.test(title)) s+=18;
+  if(/정부.*결정|정부.*발표|국회.*통과|법안.*통과|시행령|규제|정책|합의|협상 타결|무산|중단|재개/i.test(title)) s+=16;
+  if(/사망|붕괴|폭발|대형 화재|추락|충돌|대규모 정전|대피령|재난|전쟁|공격|피격/i.test(title)) s+=20;
+  if(/단독|최초 확인|첫 확인|확정/i.test(title)) s+=10;
+
+  // 단순 알림형 속보는 추천에서 과대평가하지 않는다.
+  if(/^(속보|\[속보\])/i.test(title)) s-=4;
+  if(/포토|화보|영상|SNS|근황|패션|공항패션|말말말|오늘의 운세/i.test(title)) s-=18;
+
   const age=(Date.now()-new Date(publishedAt).getTime())/60000;
-  if(Number.isFinite(age)) s += age<10?16:age<30?10:age<60?5:age>360?-10:0;
+  if(Number.isFinite(age)) s += age<15?6:age<60?3:age>360?-8:0;
   return Math.max(0,Math.min(100,Math.round(s)));
 }
 function idOf(source:string,title:string,link:string){
