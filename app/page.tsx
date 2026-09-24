@@ -11,6 +11,7 @@ const cats:Array<'전체'|Category>=['전체','생활','경제','문화','사회
 function ago(iso:string){const m=Math.max(0,Math.round((Date.now()-new Date(iso).getTime())/60000));return m<1?'방금':m<60?`${m}분 전`:m<1440?`${Math.floor(m/60)}시간 전`:`${Math.floor(m/1440)}일 전`;}
 function clock(iso:string){return new Date(iso).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});}
 function dateStamp(iso:string){const d=new Date(iso);return `${d.getMonth()+1}. ${d.getDate()}. ${clock(iso)}`;}
+function previewText(description:string, paragraphs:string[]){const raw=(description||paragraphs.join(' ')).replace(/\s+/g,' ').trim();return raw.length>200?raw.slice(0,200).trimEnd()+'…':raw;}
 
 export default function Page(){
   const [data,setData]=useState<Api>({items:[],sourceStatus:{}});
@@ -87,10 +88,7 @@ export default function Page(){
             <h3 className="detailTitle">{selected.title}</h3>
 
             <div className="previewLead">
-              {previewLoading?<p className="muted">본문을 불러오는 중입니다.</p>:<>
-                {preview.description?<p>{preview.description}</p>:preview.paragraphs[0]?<p>{preview.paragraphs[0]}</p>:<p className="muted">본문 미리보기를 가져오지 못했습니다. 원문에서 확인하세요.</p>}
-                {preview.paragraphs.slice(preview.description?0:1,4).map((p,i)=><p key={i}>{p}</p>)}
-              </>}
+              {previewLoading?<p className="muted">본문을 불러오는 중입니다.</p>:previewText(preview.description,preview.paragraphs)?<p>{previewText(preview.description,preview.paragraphs)}</p>:<p className="muted">본문 미리보기를 가져오지 못했습니다. 원문에서 확인하세요.</p>}
             </div>
 
             <a className="primaryLink" href={selected.link} target="_blank" rel="noreferrer">
