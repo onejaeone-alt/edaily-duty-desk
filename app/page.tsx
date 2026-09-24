@@ -12,6 +12,7 @@ function ago(iso:string){const m=Math.max(0,Math.round((Date.now()-new Date(iso)
 function clock(iso:string){return new Date(iso).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});}
 function dateStamp(iso:string){const d=new Date(iso);return `${d.getMonth()+1}. ${d.getDate()}. ${clock(iso)}`;}
 function previewText(description:string, paragraphs:string[]){const raw=(description||paragraphs.join(' ')).replace(/\s+/g,' ').trim();return raw.length>200?raw.slice(0,200).trimEnd()+'…':raw;}
+function recommendedItems(items:Item[]){const sorted=[...items].sort((a,b)=>b.score-a.score||new Date(b.publishedAt).getTime()-new Date(a.publishedAt).getTime());const out:Item[]=[];let breaking=0;for(const item of sorted){const isBreaking=/^(속보|\[속보\])/i.test(item.title);if(isBreaking&&breaking>=5)continue;out.push(item);if(isBreaking)breaking++;if(out.length>=40)break;}return out;}
 
 export default function Page(){
   const [data,setData]=useState<Api>({items:[],sourceStatus:{}});
@@ -37,7 +38,7 @@ export default function Page(){
   },[selected?.id]);
 
   const shown=useMemo(()=>{
-    let a=tab==='전체최신'?data.items:tab==='추천기사'?[...data.items].sort((x,y)=>y.score-x.score||new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime()).slice(0,40):data.items.filter(x=>x.exclusive||x.source==='타사 단독');
+    let a=tab==='전체최신'?data.items:tab==='추천기사'?recommendedItems(data.items):data.items.filter(x=>x.exclusive||x.source==='타사 단독');
     if(tab!=='추천기사')a=[...a].sort((x,y)=>new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime());
     if(cat!=='전체')a=a.filter(x=>x.category===cat);
     if(q.trim()){const qq=q.trim().toLowerCase();a=a.filter(x=>(x.title+' '+x.source).toLowerCase().includes(qq))}
