@@ -15,7 +15,7 @@ function dateStamp(iso:string){const d=new Date(iso);return `${d.getMonth()+1}. 
 export default function Page(){
   const [data,setData]=useState<Api>({items:[],sourceStatus:{}});
   const [loading,setLoading]=useState(true); const [err,setErr]=useState('');
-  const [tab,setTab]=useState<'전체최신'|'통신3사'|'타사단독'|'이데일리대조'>('전체최신');
+  const [tab,setTab]=useState<'전체최신'|'추천기사'|'타사단독'|'이데일리대조'>('전체최신');
   const [cat,setCat]=useState<'전체'|Category>('전체'); const [q,setQ]=useState('');
   const [selected,setSelected]=useState<Item|null>(null);
   const [preview,setPreview]=useState<Preview>({description:'',paragraphs:[]});
@@ -36,8 +36,8 @@ export default function Page(){
   },[selected?.id]);
 
   const shown=useMemo(()=>{
-    let a=tab==='전체최신'?data.items:tab==='통신3사'?data.items.filter(x=>['연합뉴스','뉴시스','뉴스1'].includes(x.source)):tab==='타사단독'?data.items.filter(x=>x.exclusive||x.source==='타사 단독'):data.items.filter(x=>x.edailyMatch);
-    a=[...a].sort((x,y)=>new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime());
+    let a=tab==='전체최신'?data.items:tab==='추천기사'?[...data.items].sort((x,y)=>y.score-x.score||new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime()).slice(0,40):tab==='타사단독'?data.items.filter(x=>x.exclusive||x.source==='타사 단독'):data.items.filter(x=>x.edailyMatch);
+    if(tab!=='추천기사')a=[...a].sort((x,y)=>new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime());
     if(cat!=='전체')a=a.filter(x=>x.category===cat);
     if(q.trim()){const qq=q.trim().toLowerCase();a=a.filter(x=>(x.title+' '+x.source).toLowerCase().includes(qq))}
     return a;
@@ -45,7 +45,7 @@ export default function Page(){
 
   return <div className="appShell">
     <header className="topbar">
-      <div className="brand"><div className="brandIcon"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="4" width="56" height="56" rx="12" fill="#2456F3"/><rect x="19" y="14" width="24" height="36" rx="4" fill="#fff"/><path d="M43 14v10h10" fill="#DCE6FF"/><path d="M43 14l10 10V18a4 4 0 0 0-4-4h-6z" fill="#FF5B5B"/><rect x="24" y="24" width="14" height="3" rx="1.5" fill="#2456F3"/><rect x="24" y="31" width="14" height="3" rx="1.5" fill="#2456F3"/><rect x="24" y="38" width="11" height="3" rx="1.5" fill="#2456F3"/></svg></div><div><h1>당직 데스크</h1><p>EDAILY NEWSROOM</p></div></div>
+      <div className="brand"><div className="brandIcon"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="4" width="56" height="56" rx="12" fill="#2456F3"/><text x="31" y="42" textAnchor="middle" fontSize="36" fontWeight="800" fontFamily="Arial, sans-serif" fill="#fff">E</text><circle cx="49" cy="15" r="5.5" fill="#FF4D5E"/></svg></div><div><h1>당직 데스크</h1><p>EDAILY NEWSROOM</p></div></div>
       <div className="topMeta"><span>{new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'})}</span><strong>{new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false})}</strong><small>KST</small><em>개인용</em></div>
     </header>
 
@@ -60,7 +60,7 @@ export default function Page(){
       <div className="workspace">
         <section className="newsPanel">
           <nav className="tabs">
-            {(['전체최신','통신3사','타사단독','이데일리대조'] as const).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t==='전체최신'?'전체':t==='통신3사'?'통신 3사':t==='타사단독'?'타사 단독':'이데일리 대조'}</button>)}
+            {(['전체최신','추천기사','타사단독','이데일리대조'] as const).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t==='전체최신'?'전체':t==='추천기사'?'추천기사':t==='타사단독'?'타사 단독':'이데일리 대조'}</button>)}
           </nav>
           <div className="filters"><div>{cats.map(c=><button key={c} className={cat===c?'active':''} onClick={()=>setCat(c)}>{c}</button>)}</div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="제목·매체 검색"/></div>
           <div className="listHead"><strong>{shown.length}</strong>건 <span>최신순</span></div>
