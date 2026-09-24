@@ -6,12 +6,14 @@ type Match={title:string;link:string;similarity:number};
 type Item={id:string;title:string;link:string;source:string;publishedAt:string;category:Category;score:number;exclusive:boolean;via?:string;edailyMatch?:Match|null};
 type Api={generatedAt?:string;items:Item[];sourceStatus:Record<string,{ok:boolean;count:number;mode:string}>};
 type Preview={description:string;paragraphs:string[];resolvedUrl?:string};
+type EdailyCheck={found:boolean;keywords:string[];best?:{title:string;link:string;publishedAt?:string;score:number}|null;candidates?:Array<{title:string;link:string;publishedAt?:string;score:number}>};
 const cats:Array<'전체'|Category>=['전체','생활','경제','문화','사회','정치','국제','스포츠','기타'];
 
 function ago(iso:string){const m=Math.max(0,Math.round((Date.now()-new Date(iso).getTime())/60000));return m<1?'방금':m<60?`${m}분 전`:m<1440?`${Math.floor(m/60)}시간 전`:`${Math.floor(m/1440)}일 전`;}
 function clock(iso:string){return new Date(iso).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});}
 function dateStamp(iso:string){const d=new Date(iso);return `${d.getMonth()+1}. ${d.getDate()}. ${clock(iso)}`;}
 function previewText(description:string, paragraphs:string[]){const raw=(description||paragraphs.join(' ')).replace(/\s+/g,' ').trim();return raw.length>200?raw.slice(0,200).trimEnd()+'…':raw;}
+function recommendedItems(items:Item[]){const sorted=[...items].sort((a,b)=>b.score-a.score||new Date(b.publishedAt).getTime()-new Date(a.publishedAt).getTime());const out:Item[]=[];let breaking=0;for(const item of sorted){const isBreaking=/^(속보|\[속보\])/i.test(item.title);if(isBreaking&&breaking>=5)continue;out.push(item);if(isBreaking)breaking++;if(out.length>=40)break;}return out;}
 
 export default function Page(){
   const [data,setData]=useState<Api>({items:[],sourceStatus:{}});
@@ -21,6 +23,8 @@ export default function Page(){
   const [selected,setSelected]=useState<Item|null>(null);
   const [preview,setPreview]=useState<Preview>({description:'',paragraphs:[]});
   const [previewLoading,setPreviewLoading]=useState(false);
+  const [edailyCheck,setEdailyCheck]=useState<EdailyCheck|null>(null);
+  const [edailyLoading,setEdailyLoading]=useState(false);
 
   async function load(){
     try{setErr('');const r=await fetch('/api/news',{cache:'no-store'});if(!r.ok)throw new Error('수집 실패');const j=await r.json();setData(j);setSelected(s=>s||j.items?.[0]||null)}
@@ -35,9 +39,18 @@ export default function Page(){
       .finally(()=>{if(alive)setPreviewLoading(false)});
     return()=>{alive=false};
   },[selected?.id]);
+  useEffect(()=>{
+    if(!selected){setEdailyCheck(null);return}
+    let alive=true;setEdailyCheck(null);setEdailyLoading(true);
+    fetch('/api/edaily-check?title='+encodeURIComponent(selected.title),{cache:'no-store'})
+      .then(r=>r.json()).then(j=>{if(alive)setEdailyCheck(j)})
+      .catch(()=>{if(alive)setEdailyCheck({found:false,keywords:[],candidates:[]})})
+      .finally(()=>{if(alive)setEdailyLoading(false)});
+    return()=>{alive=false};
+  },[selected?.id]);
 
   const shown=useMemo(()=>{
-    let a=tab==='전체최신'?data.items:tab==='추천기사'?[...data.items].sort((x,y)=>y.score-x.score||new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime()).slice(0,40):data.items.filter(x=>x.exclusive||x.source==='타사 단독');
+    let a=tab==='전체최신'?data.items:tab==='추천기사'?recommendedItems(data.items):data.items.filter(x=>x.exclusive||x.source==='타사 단독');
     if(tab!=='추천기사')a=[...a].sort((x,y)=>new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime());
     if(cat!=='전체')a=a.filter(x=>x.category===cat);
     if(q.trim()){const qq=q.trim().toLowerCase();a=a.filter(x=>(x.title+' '+x.source).toLowerCase().includes(qq))}
@@ -70,7 +83,7 @@ export default function Page(){
             {shown.map(x=><button key={x.id} className={'newsRow '+(selected?.id===x.id?'selected':'')} onClick={()=>setSelected(x)}>
               <div className="timeCol"><strong>{clock(x.publishedAt)}</strong><span>{x.category}</span></div>
               <div className="story"><div className="sourceName">{x.source}{x.exclusive&&<em>단독</em>}</div><h3>{x.title}</h3><p>{x.via||'최신 기사'}</p></div>
-              <div className="matchState">{x.edailyMatch?'이데일리 관련 기사 있음':'대조 결과 없음'}</div><div className="chev">›</div>
+              <div className="matchState">클릭해 대조</div><div className="chev">›</div>
             </button>)}
           </div>
         </section>
@@ -98,19 +111,22 @@ export default function Page(){
 
             <div className="edailyBox">
               <h4>✓ 이데일리에 나왔나?</h4>
-              {selected.edailyMatch?<>
+              {edailyLoading?<>
+                <strong className="none">이데일리 기사 검색 중</strong>
+                <p className="helper">기사 제목에서 핵심 키워드를 뽑아 이데일리 기사만 다시 찾고 있습니다.</p>
+              </>:edailyCheck?.found&&edailyCheck.best?<>
                 <strong>관련 기사를 찾았습니다</strong>
-                <p className="helper">같은 사건인지, 새로 추가된 사실이 있는지 원문을 비교해보세요.</p>
-                <a className="relatedLink" href={selected.edailyMatch.link} target="_blank" rel="noreferrer">{selected.edailyMatch.title}</a>
-                <small>이데일리 · 제목 유사도 {Math.round(selected.edailyMatch.similarity*100)}%</small>
+                <p className="helper">핵심 키워드가 겹치는 이데일리 기사를 찾았습니다. 같은 사건인지 원문을 비교해보세요.</p>
+                <a className="relatedLink" href={edailyCheck.best.link} target="_blank" rel="noreferrer">{edailyCheck.best.title}</a>
+                <small>검색 키워드 · {edailyCheck.keywords.slice(0,4).join(' · ')}</small>
               </>:<>
                 <strong className="none">확인한 범위에서는 찾지 못했습니다</strong>
-                <p className="helper">검색에서 찾지 못해도 이미 출고됐거나 다른 기자가 쓰고 있을 수 있습니다.</p>
+                <p className="helper">{edailyCheck?.keywords?.length?'검색 키워드: '+edailyCheck.keywords.slice(0,4).join(' · '):'핵심 키워드로 다시 검색했지만 관련 기사를 찾지 못했습니다.'}</p>
               </>}
 
               <button className="searchGhost" type="button" disabled>
                 <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.8"/><path d="M12.8 12.8L17 17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
-                <span>추가 검색 중</span>
+                <span>{edailyLoading?'검색 중':'키워드 검색 완료'}</span>
               </button>
               <a className="naverLink" href={`https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(selected.title+' 이데일리')}`} target="_blank" rel="noreferrer">
                 네이버에서 직접 확인
