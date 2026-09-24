@@ -28,3 +28,21 @@
 .naverLink svg{width:16px;height:16px;flex:none}
 @media(max-width:1200px){.workspace{grid-template-columns:minmax(0,1fr) 340px}.detailTitle{font-size:24px}.previewLead p{font-size:16px}}
 @media(max-width:1000px){.workspace{grid-template-columns:1fr}.detailTitle{font-size:22px}.previewLead p{font-size:15px}.primaryLink{font-size:17px;padding:18px 20px}.searchGhost{height:66px}}
+
+/* Reduce detail rail typography to original scale */
+.detailTop b{font-size:13px}
+.closeBtn{font-size:13px}
+.detailMeta{font-size:12px;margin-top:18px}
+.detailMeta svg{width:18px;height:18px}
+.detailTitle{font-size:22px;line-height:1.42;margin:20px 0 22px}
+.previewLead p{font-size:14px;line-height:1.62;margin-bottom:10px}
+.primaryLink{font-size:15px;padding:16px 18px;border-radius:11px;margin-top:18px}
+.primaryLink svg{width:19px;height:19px}
+.edailyBox{padding-top:24px;margin-top:32px}
+.edailyBox h4{font-size:15px;margin-bottom:18px}
+.edailyBox strong{font-size:15px;margin-bottom:12px}
+.helper{font-size:13px;line-height:1.6;margin-bottom:18px}
+.relatedLink{font-size:13px}
+.searchGhost{height:58px;font-size:14px;border-radius:11px;margin-top:16px}
+.searchGhost svg{width:22px;height:22px}
+.naverLink{font-size:13px;margin-top:18px}
