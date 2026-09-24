@@ -111,13 +111,18 @@ export async function fetchNews1(){
     const $=cheerio.load(raw); const out:NewsItem[]=[];
     $('a[href]').each((_,el)=>{
       const href=$(el).attr('href')||''; const title=$(el).text().replace(/\s+/g,' ').trim();
-      if(title.length<10 || !/^\/(politics|economy|society|industry|world|sports|entertain|local|life-culture|photos|articles)/.test(href)) return;
+      if(title.length<10) return;
+      if(!/news1\.kr/.test(href) && !/^\//.test(href)) return;
+      if(!/\/(articles|politics|economy|society|industry|world|sports|entertain|local|life-culture)\//.test(href) && !/\/articles\//.test(href)) return;
       const link=new URL(href,'https://www.news1.kr').toString();
       const publishedAt=new Date().toISOString(); const category=classify(title,'기타'); const score=importance(title,publishedAt);
-      out.push({id:idOf('뉴스1',title,link),title,link,source:'뉴스1',publishedAt,category,score,exclusive:/단독/.test(title)});
+      out.push({id:idOf('뉴스1',title,link),title,link,source:'뉴스1',publishedAt,category,score,exclusive:/단독/.test(title),via:'뉴스1 실시간 속보'});
     });
-    return dedupe(out).slice(0,80);
-  }catch{return []}
+    const direct=dedupe(out).slice(0,80);
+    if(direct.length>=5) return direct;
+  }catch{}
+  const fallback=await fetchGoogleNews('site:news1.kr when:1h','뉴스1');
+  return fallback.map(x=>({...x,source:'뉴스1',via:'Google 뉴스 보완'})).slice(0,80);
 }
 
 function googleRssUrl(q:string){
@@ -158,7 +163,7 @@ export async function getAllNews(){
     items:merged.slice(0,220),
     sourceStatus:{
       newsis:{ok:newsis.length>0,count:newsis.length,mode:'공식 RSS'},
-      news1:{ok:news1.length>0,count:news1.length,mode:'공개 실시간 속보'},
+      news1:{ok:news1.length>0,count:news1.length,mode:news1.some(x=>x.via==='뉴스1 실시간 속보')?'실시간 속보':'Google 뉴스 보완'},
       yonhap:{ok:yonhap.length>0,count:yonhap.length,mode:'Google 뉴스 보완'},
       exclusive:{ok:exclusive.length>0,count:exclusive.length,mode:'Google 뉴스 단독 검색'},
       edaily:{ok:edaily.length>0,count:edaily.length,mode:'Google 뉴스 기출고 대조'}
