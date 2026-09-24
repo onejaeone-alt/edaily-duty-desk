@@ -44,7 +44,7 @@ export default function Page(){
 
   return <div className="appShell">
     <header className="topbar">
-      <div className="brand"><div className="brandIcon"><span>◉</span></div><div><h1>당직 데스크</h1><p>EDAILY NEWSROOM</p></div></div>
+      <div className="brand"><div className="brandIcon"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="3.2" fill="currentColor"/><path d="M26.4 27.1c-2.9 2.9-2.9 6.9 0 9.8" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/><path d="M37.6 27.1c2.9 2.9 2.9 6.9 0 9.8" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/><path d="M21.9 22.7c-5.5 5.4-5.5 13.2 0 18.6" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/><path d="M42.1 22.7c5.5 5.4 5.5 13.2 0 18.6" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/></svg></div><div><h1>당직 데스크</h1><p>EDAILY NEWSROOM</p></div></div>
       <div className="topMeta"><span>{new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'})}</span><strong>{new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false})}</strong><small>KST</small><em>개인용</em></div>
     </header>
 
