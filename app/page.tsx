@@ -16,7 +16,7 @@ function previewText(description:string, paragraphs:string[]){const raw=(descrip
 export default function Page(){
   const [data,setData]=useState<Api>({items:[],sourceStatus:{}});
   const [loading,setLoading]=useState(true); const [err,setErr]=useState('');
-  const [tab,setTab]=useState<'전체최신'|'추천기사'|'타사단독'|'이데일리대조'>('전체최신');
+  const [tab,setTab]=useState<'전체최신'|'추천기사'|'타사단독'>('전체최신');
   const [cat,setCat]=useState<'전체'|Category>('전체'); const [q,setQ]=useState('');
   const [selected,setSelected]=useState<Item|null>(null);
   const [preview,setPreview]=useState<Preview>({description:'',paragraphs:[]});
@@ -37,7 +37,7 @@ export default function Page(){
   },[selected?.id]);
 
   const shown=useMemo(()=>{
-    let a=tab==='전체최신'?data.items:tab==='추천기사'?[...data.items].sort((x,y)=>y.score-x.score||new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime()).slice(0,40):tab==='타사단독'?data.items.filter(x=>x.exclusive||x.source==='타사 단독'):data.items.filter(x=>x.edailyMatch);
+    let a=tab==='전체최신'?data.items:tab==='추천기사'?[...data.items].sort((x,y)=>y.score-x.score||new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime()).slice(0,40):data.items.filter(x=>x.exclusive||x.source==='타사 단독');
     if(tab!=='추천기사')a=[...a].sort((x,y)=>new Date(y.publishedAt).getTime()-new Date(x.publishedAt).getTime());
     if(cat!=='전체')a=a.filter(x=>x.category===cat);
     if(q.trim()){const qq=q.trim().toLowerCase();a=a.filter(x=>(x.title+' '+x.source).toLowerCase().includes(qq))}
@@ -61,7 +61,7 @@ export default function Page(){
       <div className="workspace">
         <section className="newsPanel">
           <nav className="tabs">
-            {(['전체최신','추천기사','타사단독','이데일리대조'] as const).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t==='전체최신'?'전체':t==='추천기사'?'추천기사':t==='타사단독'?'타사 단독':'이데일리 대조'}</button>)}
+            {(['전체최신','추천기사','타사단독'] as const).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t==='전체최신'?'전체':t==='추천기사'?'추천기사':'타사 단독'}</button>)}
           </nav>
           <div className="filters"><div>{cats.map(c=><button key={c} className={cat===c?'active':''} onClick={()=>setCat(c)}>{c}</button>)}</div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="제목·매체 검색"/></div>
           <div className="listHead"><strong>{shown.length}</strong>건 <span>최신순</span></div>
